@@ -1,9 +1,8 @@
-import { formatEther, Hex, parseEther } from "viem"
-import { getEthWalletClient } from "../utils/ethClient"
+import { Hex } from "viem"
 import { makeLogger } from "../utils/logger"
-import { getArbWalletClient } from "../utils/arbClient"
 import { getPublicScrollClient, getScrollWalletClient } from "../utils/scrollClient"
 import { deployAbi, deployData } from "../data/abi/deploy"
+import { waitGas } from "../utils/getCurrentGas"
 
 export class Deploy {
     privateKey: Hex
@@ -21,6 +20,7 @@ export class Deploy {
     }
 
     async deploy() {
+        await waitGas()
         this.logger.info(`${this.walletAddress} | Deploy contract`)
 
         const txHash = await this.scrollWallet.deployContract({
