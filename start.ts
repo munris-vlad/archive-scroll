@@ -1,6 +1,6 @@
 import { privateKeyConvert, readWallets } from "./utils/wallet"
 import { random, randomFloat, shuffle, sleep } from "./utils/common"
-import { bridgeConfig, generalConfig } from "./config"
+import { bridgeConfig, generalConfig, merklyConfig } from "./config"
 import { makeLogger } from "./utils/logger"
 import { entryPoint } from "./utils/menu"
 import { Bridge } from "./modules/bridge"
@@ -8,6 +8,7 @@ import { waitGas } from "./utils/getCurrentGas"
 import { Orbiter } from "./modules/orbiter"
 import { Scrollswap } from "./modules/scrollswap"
 import { Deploy } from "./modules/deploy"
+import { Merkly } from "./modules/merkly"
 
 let privateKeys = readWallets('./private_keys.txt')
 
@@ -66,6 +67,19 @@ async function deployModule() {
     for (let privateKey of privateKeys) {
         const deploy = new Deploy(privateKeyConvert(privateKey))
         await deploy.deploy()
+        
+        const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
+        logger.info(`Waiting ${sleepTime} sec until next wallet...`)
+        await sleep(sleepTime * 1000)
+    }
+}
+
+async function merklyModule() {
+    const logger = makeLogger("Merkly")
+    for (let privateKey of privateKeys) {
+        const refuelSum = randomFloat(merklyConfig.refuelFrom, merklyConfig.refuelTo)
+        const merkly = new Merkly(privateKeyConvert(privateKey))
+        await merkly.refuel(refuelSum.toString())
         
         const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
         logger.info(`Waiting ${sleepTime} sec until next wallet...`)
@@ -167,6 +181,9 @@ async function startMenu() {
             break
         case "orbiter":
             await orbiterModule()
+            break
+        case "merkly":
+            await merklyModule()
             break
         case "scrollswap":
             await scrollswapModule()

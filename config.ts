@@ -3,7 +3,7 @@ export const generalConfig = {
     scrollrpc: 'https://rpc.scroll.io',
     sleepFrom: 60,
     sleepTo: 150,
-    maxGas: 20,
+    maxGas: 25,
     shuffleWallets: true,
     shuffleCustomModules: false,
     customModules: [] // scrollswap
@@ -22,4 +22,11 @@ export const bridgeConfig = {
 export const swapConfig = {
     swapEthPercentFrom: 20,
     swapEthPercentTo: 30
+}
+
+export const merklyConfig = {
+    refuelFrom: 0.0006,
+    refuelTo: 0.0007,
+    sourceNetwork: 'Optimism', // Scroll | to scroll: 'random' 'Arbitrum' 'Optimism' 'Polygon' 'Avalanche'
+    destinationNetwork: 'Scroll' // Scroll | from scroll: 'random' 'Zora' 'Arbitrum Nova' 'Moonbeam' 'Gnosis' 'OpBNB' 'Astar'
 }

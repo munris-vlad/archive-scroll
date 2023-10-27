@@ -28,6 +28,10 @@ export const entryPoint = async () => {
                     value: "orbiter",
                 },
                 {
+                    name: "Merkly",
+                    value: "merkly",
+                },
+                {
                     name: "Scrollswap",
                     value: "scrollswap",
                 },
