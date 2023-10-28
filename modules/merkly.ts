@@ -64,7 +64,7 @@ export class Merkly {
             this.destNetwork = 214
 
             if (merklyConfig.sourceNetwork === 'random') {
-                const randomNetwork = random(1, 4)
+                const randomNetwork = random(1, 2)
 
                 switch (randomNetwork) {
                     case 1:
