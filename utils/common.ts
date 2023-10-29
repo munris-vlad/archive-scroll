@@ -20,3 +20,7 @@ export function shuffle(array: Array<string>) {
 
     return array
 }
+
+export function getUsdValue(value: BigInt, usdPrice: number) {
+    return (parseInt(value.toString()) / Math.pow(10, 18)) * usdPrice
+}

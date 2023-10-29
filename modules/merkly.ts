@@ -1,7 +1,7 @@
 import { Hex, encodePacked, parseEther, parseGwei } from "viem"
 import { makeLogger } from "../utils/logger"
 import { merklyAbi } from "../data/abi/merkly"
-import { random, randomFloat, sleep } from "../utils/common"
+import { getUsdValue, random, randomFloat, sleep } from "../utils/common"
 import { merklyConfig } from "../config"
 import { refill } from "../utils/refill"
 import { waitGas } from "../utils/getCurrentGas"
@@ -10,6 +10,7 @@ import { getPolygonWalletClient, getPublicPolygonClient } from "../utils/polygon
 import { getArbWalletClient, getPublicArbClient } from "../utils/arbClient"
 import { getOpWalletClient, getPublicOpClient } from "../utils/optimismClient"
 import { getAvaxWalletClient, getPublicAvaxClient } from "../utils/avaxClient"
+import axios from 'axios'
 
 export class Merkly {
     privateKey: Hex
@@ -28,7 +29,8 @@ export class Merkly {
     randomNetwork: any
     client: any
     wallet: any
-    walletAddress: Hex
+    walletAddress: Hex = '0x'
+    sourceNetworks: any = ['Polygon', 'Arbitrum', 'Optimism', 'Avalanche']
     networks = [
         {
             id: 110,
@@ -44,10 +46,13 @@ export class Merkly {
         this.privateKey = privateKey
         this.logger = makeLogger("Merkly")
         this.merklyContract = this.merklyContracts.scroll
+        this.wallet = getScrollWalletClient(privateKey)
+        this.walletAddress = this.wallet.account.address
 
         if (merklyConfig.sourceNetwork === 'Scroll') {
             this.client = getPublicScrollClient()
             this.wallet = getScrollWalletClient(privateKey)
+            this.walletAddress = this.wallet.account.address
             
             if (merklyConfig.destinationNetwork === 'random') {
                 this.randomNetwork = this.networks[random(0, this.networks.length-1)]
@@ -64,61 +69,110 @@ export class Merkly {
             this.destNetwork = 214
 
             if (merklyConfig.sourceNetwork === 'random') {
-                const randomNetwork = random(1, 2)
+                const randomNetwork = random(1, 4)
 
                 switch (randomNetwork) {
                     case 1:
-                        this.client = getPublicArbClient()
-                        this.wallet = getArbWalletClient(privateKey)
-                        this.merklyContract = this.merklyContracts.arbitrum
+                        this.setSourceNetwork('Arbitrum')
                         break
                     case 2:
-                        this.client = getPublicOpClient()
-                        this.wallet = getOpWalletClient(privateKey)
-                        this.merklyContract = this.merklyContracts.optimism
+                        this.setSourceNetwork('Optimism')
                         break
                     case 3:
-                        this.client = getPublicPolygonClient()
-                        this.wallet = getPolygonWalletClient(privateKey)
-                        this.merklyContract = this.merklyContracts.polygon
+                        this.setSourceNetwork('Polygon')
                         break
                     case 4:
-                        this.client = getPublicAvaxClient()
-                        this.wallet = getAvaxWalletClient(privateKey)
-                        this.merklyContract = this.merklyContracts.avalanche
+                        this.setSourceNetwork('Avalanche')
                         break
                 }
-            } else {
-                switch (merklyConfig.sourceNetwork) {
-                    case 'Arbitrum':
-                        this.client = getPublicArbClient()
-                        this.wallet = getArbWalletClient(privateKey)
-                        this.merklyContract = this.merklyContracts.arbitrum
-                        this.explorerLink = 'https://arbiscan.io'
-                        break
-                    case 'Optimism':
-                        this.client = getPublicOpClient()
-                        this.wallet = getOpWalletClient(privateKey)
-                        this.merklyContract = this.merklyContracts.optimism
-                        this.explorerLink = 'https://optimistic.etherscan.io'
-                        break
-                    case 'Polygon':
-                        this.client = getPublicPolygonClient()
-                        this.wallet = getPolygonWalletClient(privateKey)
-                        this.merklyContract = this.merklyContracts.polygon
-                        this.explorerLink = 'https://polygonscan.com'
-                        break
-                    case 'Avalanche':
-                        this.client = getPublicAvaxClient()
-                        this.wallet = getAvaxWalletClient(privateKey)
-                        this.merklyContract = this.merklyContracts.avalanche
-                        this.explorerLink = 'https://avascan.info/blockchain/dfk'
-                        break
+            } else if (merklyConfig.sourceNetwork !== 'random' && merklyConfig.sourceNetwork !== 'auto') {
+                this.setSourceNetwork(merklyConfig.sourceNetwork)
+            }
+        }
+    }
+
+    setSourceNetwork(network: string) {
+        switch (network) {
+            case 'Arbitrum':
+                this.client = getPublicArbClient()
+                this.wallet = getArbWalletClient(this.privateKey)
+                this.merklyContract = this.merklyContracts.arbitrum
+                this.explorerLink = 'https://arbiscan.io'
+                break
+            case 'Optimism':
+                this.client = getPublicOpClient()
+                this.wallet = getOpWalletClient(this.privateKey)
+                this.merklyContract = this.merklyContracts.optimism
+                this.explorerLink = 'https://optimistic.etherscan.io'
+                break
+            case 'Polygon':
+                this.client = getPublicPolygonClient()
+                this.wallet = getPolygonWalletClient(this.privateKey)
+                this.merklyContract = this.merklyContracts.polygon
+                this.explorerLink = 'https://polygonscan.com'
+                break
+            case 'Avalanche':
+                this.client = getPublicAvaxClient()
+                this.wallet = getAvaxWalletClient(this.privateKey)
+                this.merklyContract = this.merklyContracts.avalanche
+                this.explorerLink = 'https://avascan.info/blockchain/dfk'
+                break
+        }
+        this.walletAddress = this.wallet.account.address
+    }
+
+    async defineSourceNetwork() {
+        let polygonPrice = 0
+        let avaxPrice = 0
+        let ethPrice = 0
+        await axios.get('https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD').then(response => {
+            ethPrice = response.data.USD
+        })
+
+        await axios.get('https://min-api.cryptocompare.com/data/price?fsym=MATIC&tsyms=USD').then(response => {
+            polygonPrice = response.data.USD
+        })
+
+        await axios.get('https://min-api.cryptocompare.com/data/price?fsym=AVAX&tsyms=USD').then(response => {
+            avaxPrice = response.data.USD
+        })
+        
+        let balance:any = { Polygon: 0, Avalanche: 0, Arbitrum: 0, Optimism: 0}
+
+        for (const network of this.sourceNetworks) {
+            switch (network) {
+                case "Polygon":
+                    balance['Polygon'] = getUsdValue(await getPublicPolygonClient().getBalance({ address: this.walletAddress }), polygonPrice)
+                    break
+                case "Avalanche":
+                    balance['Avalanche'] = getUsdValue(await getPublicAvaxClient().getBalance({ address: this.walletAddress }), avaxPrice)
+                    break
+                case "Arbitrum":
+                    balance['Arbitrum'] = getUsdValue(await getPublicArbClient().getBalance({ address: this.walletAddress }), ethPrice)
+                    break
+                case "Optimism":
+                    balance['Optimism'] = getUsdValue(await getPublicOpClient().getBalance({ address: this.walletAddress }), ethPrice)
+                    break
+            }
+        }
+    
+        let topNetwork = null
+        let topBalance = -Infinity
+        
+        for (const key in balance) {
+            if (balance.hasOwnProperty(key)) {
+                const currentBalance = balance[key]
+                if (currentBalance > topBalance) {
+                    topBalance = currentBalance
+                    topNetwork = key
                 }
             }
         }
 
-        this.walletAddress = this.wallet.account.address
+        if (topNetwork) {
+            this.logger.info(`${this.walletAddress} | Auto network: ${topNetwork}`)
+            this.setSourceNetwork(topNetwork)
+        }
     }
 
     async estimateLayerzeroFee(adapterParams: any) {
@@ -141,11 +195,12 @@ export class Merkly {
     async refuel(value: string) {
         // await waitGas()
         this.logger.info(`${this.walletAddress} | Refuel to ${this.randomNetwork.name}`)
+        
+        if (merklyConfig.sourceNetwork === 'auto') {
+            await this.defineSourceNetwork()
+        }
 
         let amount = BigInt(parseEther(value))
-        console.log(amount)
-        console.log(this.destNetwork)
-        console.log(this.walletAddress)
 
         let isSuccess = false
         let retryCount = 1
