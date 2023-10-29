@@ -30,6 +30,7 @@ export class Merkly {
     client: any
     wallet: any
     walletAddress: Hex = '0x'
+    ethPrice: number = 0
     sourceNetworks: any = ['Polygon', 'Arbitrum', 'Optimism', 'Avalanche']
     networks = [
         {
@@ -124,9 +125,8 @@ export class Merkly {
     async defineSourceNetwork() {
         let polygonPrice = 0
         let avaxPrice = 0
-        let ethPrice = 0
         await axios.get('https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD').then(response => {
-            ethPrice = response.data.USD
+            this.ethPrice = response.data.USD
         })
 
         await axios.get('https://min-api.cryptocompare.com/data/price?fsym=MATIC&tsyms=USD').then(response => {
@@ -136,7 +136,7 @@ export class Merkly {
         await axios.get('https://min-api.cryptocompare.com/data/price?fsym=AVAX&tsyms=USD').then(response => {
             avaxPrice = response.data.USD
         })
-        
+
         let balance:any = { Polygon: 0, Avalanche: 0, Arbitrum: 0, Optimism: 0}
 
         for (const network of this.sourceNetworks) {
@@ -148,10 +148,10 @@ export class Merkly {
                     balance['Avalanche'] = getUsdValue(await getPublicAvaxClient().getBalance({ address: this.walletAddress }), avaxPrice)
                     break
                 case "Arbitrum":
-                    balance['Arbitrum'] = getUsdValue(await getPublicArbClient().getBalance({ address: this.walletAddress }), ethPrice)
+                    balance['Arbitrum'] = getUsdValue(await getPublicArbClient().getBalance({ address: this.walletAddress }), this.ethPrice)
                     break
                 case "Optimism":
-                    balance['Optimism'] = getUsdValue(await getPublicOpClient().getBalance({ address: this.walletAddress }), ethPrice)
+                    balance['Optimism'] = getUsdValue(await getPublicOpClient().getBalance({ address: this.walletAddress }), this.ethPrice)
                     break
             }
         }
@@ -170,9 +170,11 @@ export class Merkly {
         }
 
         if (topNetwork) {
-            this.logger.info(`${this.walletAddress} | Auto network: ${topNetwork}`)
+            this.logger.info(`${this.walletAddress} | Auto network: ${topNetwork} ($${topBalance.toFixed(2)})`)
             this.setSourceNetwork(topNetwork)
         }
+
+        return topBalance
     }
 
     async estimateLayerzeroFee(adapterParams: any) {
@@ -197,7 +199,12 @@ export class Merkly {
         this.logger.info(`${this.walletAddress} | Refuel to ${this.randomNetwork.name}`)
         
         if (merklyConfig.sourceNetwork === 'auto') {
-            await this.defineSourceNetwork()
+            const topBalance:number = await this.defineSourceNetwork()
+
+            if ((parseInt(value) * this.ethPrice) < topBalance) {
+                this.logger.info(`${this.walletAddress} | Not enough balance, skip`)
+                return
+            }
         }
 
         let amount = BigInt(parseEther(value))
