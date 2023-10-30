@@ -17,11 +17,7 @@ export class Orbiter {
     async arbitrumOrbiter(amount: string) {
         const wallet = getArbWalletClient(this.privateKey)
         let orbiterAmount = amount.slice(0, -4) + this.scrollOrbiterDestination
-        console.log(amount)
-        console.log(orbiterAmount)
         const value: bigint = parseEther(orbiterAmount)
-
-        console.log(value)
 
         this.logger.info(`${wallet.account.address} | Orbiter bridge Arbitrum -> Scroll ${amount} ETH`)
         

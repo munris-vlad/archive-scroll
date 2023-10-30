@@ -1,6 +1,6 @@
 import { Hex, encodePacked, parseEther, parseGwei } from "viem"
 import { makeLogger } from "../utils/logger"
-import { merklyAbi } from "../data/abi/merkly"
+import { merklyAbi, merklyAbiBase } from "../data/abi/merkly"
 import { getUsdValue, random, randomFloat, sleep } from "../utils/common"
 import { merklyConfig } from "../config"
 import { refill } from "../utils/refill"
@@ -11,11 +11,12 @@ import { getArbWalletClient, getPublicArbClient } from "../utils/arbClient"
 import { getOpWalletClient, getPublicOpClient } from "../utils/optimismClient"
 import { getAvaxWalletClient, getPublicAvaxClient } from "../utils/avaxClient"
 import axios from 'axios'
+import { getBaseWalletClient, getPublicBaseClient } from "../utils/baseClient"
 
 export class Merkly {
     privateKey: Hex
     logger: any
-    destNetwork: number = 195
+    destNetwork: number = 214
     explorerLink: string = 'https://scrollscan.com'
     merklyContract: Hex
     merklyContracts: { [key: string]: Hex } = {
@@ -23,6 +24,7 @@ export class Merkly {
         'arbitrum': '0xaa58e77238f0e4a565343a89a79b4addd744d649',
         'avalanche': '0xe030543b943bdcd6559711ec8d344389c66e1d56',
         'polygon': '0xa184998ec58dc1da77a1f9f1e361541257a50cf4',
+        'base': '0x6bf98654205b1ac38645880ae20fc00b0bb9ffca',
         'scroll': '0x7dfb5e7808b5eb4fb8b9e7169537575f6ff1a218'
     }
 
@@ -31,7 +33,8 @@ export class Merkly {
     wallet: any
     walletAddress: Hex = '0x'
     ethPrice: number = 0
-    sourceNetworks: any = ['Polygon', 'Arbitrum', 'Optimism', 'Avalanche']
+    sourceNetwork: string = 'Auto'
+    sourceNetworks: any = ['Polygon', 'Arbitrum', 'Optimism', 'Avalanche', 'Base']
     networks = [
         {
             id: 110,
@@ -85,6 +88,9 @@ export class Merkly {
                     case 4:
                         this.setSourceNetwork('Avalanche')
                         break
+                    case 5:
+                        this.setSourceNetwork('Base')
+                        break
                 }
             } else if (merklyConfig.sourceNetwork !== 'random' && merklyConfig.sourceNetwork !== 'auto') {
                 this.setSourceNetwork(merklyConfig.sourceNetwork)
@@ -99,24 +105,35 @@ export class Merkly {
                 this.wallet = getArbWalletClient(this.privateKey)
                 this.merklyContract = this.merklyContracts.arbitrum
                 this.explorerLink = 'https://arbiscan.io'
+                this.sourceNetwork = 'Arbitrum'
                 break
             case 'Optimism':
                 this.client = getPublicOpClient()
                 this.wallet = getOpWalletClient(this.privateKey)
                 this.merklyContract = this.merklyContracts.optimism
                 this.explorerLink = 'https://optimistic.etherscan.io'
+                this.sourceNetwork = 'Optimism'
                 break
             case 'Polygon':
                 this.client = getPublicPolygonClient()
                 this.wallet = getPolygonWalletClient(this.privateKey)
                 this.merklyContract = this.merklyContracts.polygon
                 this.explorerLink = 'https://polygonscan.com'
+                this.sourceNetwork = 'Polygon'
                 break
             case 'Avalanche':
                 this.client = getPublicAvaxClient()
                 this.wallet = getAvaxWalletClient(this.privateKey)
                 this.merklyContract = this.merklyContracts.avalanche
                 this.explorerLink = 'https://avascan.info/blockchain/dfk'
+                this.sourceNetwork = 'Avalanche'
+                break
+            case 'Base':
+                this.client = getPublicBaseClient()
+                this.wallet = getBaseWalletClient(this.privateKey)
+                this.merklyContract = this.merklyContracts.base
+                this.explorerLink = 'https://basescan.org'
+                this.sourceNetwork = 'Base'
                 break
         }
         this.walletAddress = this.wallet.account.address
@@ -153,6 +170,9 @@ export class Merkly {
                 case "Optimism":
                     balance['Optimism'] = getUsdValue(await getPublicOpClient().getBalance({ address: this.walletAddress }), this.ethPrice)
                     break
+                case "Base":
+                    balance['Base'] = getUsdValue(await getPublicBaseClient().getBalance({ address: this.walletAddress }), this.ethPrice)
+                    break
             }
         }
     
@@ -181,22 +201,18 @@ export class Merkly {
         let value: bigint
         const txValue = await this.client.readContract({
             address: this.merklyContract,
-            abi: merklyAbi,
-            functionName: 'estimateGasBridgeFee',
-            args: [
-                this.destNetwork,
-                false,
-                adapterParams
-            ]
+            abi: this.sourceNetwork === 'Base' ? merklyAbiBase : merklyAbi,
+            functionName: this.sourceNetwork === 'Base' ? 'estimateSendFee' : 'estimateGasBridgeFee',
+            args: this.sourceNetwork === 'Base' ? [this.destNetwork, '0x', adapterParams] : [this.destNetwork, false, adapterParams]
         })
 
         value = txValue[0]
-        return BigInt(value)
+        return this.sourceNetwork === 'Base' ? BigInt(Math.round(Number(value) * 1.2)) : BigInt(value)
     }
 
     async refuel(value: string) {
         // await waitGas()
-        this.logger.info(`${this.walletAddress} | Refuel to ${this.randomNetwork.name}`)
+        this.logger.info(`${this.walletAddress} | Refuel ${this.sourceNetwork} -> ${this.randomNetwork.name}`)
         
         if (merklyConfig.sourceNetwork === 'auto') {
             const topBalance:number = await this.defineSourceNetwork()
@@ -230,10 +246,9 @@ export class Merkly {
                 )
 
                 let value = await this.estimateLayerzeroFee(adapterParams)
-
                 const txHash = await this.wallet.writeContract({
                     address: this.merklyContract,
-                    abi: merklyAbi,
+                    abi: this.sourceNetwork === 'Base' ? merklyAbiBase : merklyAbi,
                     functionName: 'bridgeGas',
                     args: [
                         this.destNetwork,
