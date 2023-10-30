@@ -27,6 +27,10 @@ export const swapConfig = {
 export const merklyConfig = {
     refuelFrom: 0.0006,
     refuelTo: 0.0007,
-    sourceNetwork: 'auto', // Scroll | to scroll: 'auto' 'random' 'Arbitrum' 'Optimism' 'Polygon' 'Avalanche'
+    sourceNetwork: 'Base', // Scroll | to scroll: 'auto' 'random' 'Arbitrum' 'Optimism' 'Polygon' 'Avalanche' 'Base'
     destinationNetwork: 'Scroll' // Scroll | from scroll: 'random' 'Zora' 'Arbitrum Nova' 'Moonbeam' 'Gnosis' 'OpBNB' 'Astar'
+}
+
+export const deployConfig = {
+    type: 'own' // merkly
 }

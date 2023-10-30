@@ -1,8 +1,9 @@
 import { Hex } from "viem"
 import { makeLogger } from "../utils/logger"
 import { getPublicScrollClient, getScrollWalletClient } from "../utils/scrollClient"
-import { deployAbi, deployData } from "../data/abi/deploy"
+import { deployAbi, deployData, deployMerklyData } from "../data/abi/deploy"
 import { waitGas } from "../utils/getCurrentGas"
+import { deployConfig } from "../config"
 
 export class Deploy {
     privateKey: Hex
@@ -25,7 +26,7 @@ export class Deploy {
 
         const txHash = await this.scrollWallet.deployContract({
             abi: deployAbi,
-            bytecode: deployData
+            bytecode: deployConfig.type === 'own' ? deployData : deployMerklyData
         })
 
         this.logger.info(`${this.walletAddress} | Success contract deployed: https://scrollscan.com/tx/${txHash}`)

@@ -211,7 +211,7 @@ export class Merkly {
     }
 
     async refuel(value: string) {
-        // await waitGas()
+        await waitGas()
         this.logger.info(`${this.walletAddress} | Refuel ${this.sourceNetwork} -> ${this.randomNetwork.name}`)
         
         if (merklyConfig.sourceNetwork === 'auto') {
