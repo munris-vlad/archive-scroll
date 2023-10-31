@@ -14,9 +14,9 @@
 
 * Официальный бридж ETH -> Scroll
 * Orbiter Arbitrum -> Scroll
+* Merkly refuel Arbitrum, Optimism, Avalanche, Polygon, Base -> Scroll
 * Scrollswap
 * Deploy contract
-
 
 Все дексы делают round swap ETH -> Stable (USDC/DAI) -> ETH
 

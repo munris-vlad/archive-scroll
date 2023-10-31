@@ -1,9 +1,9 @@
 export const generalConfig = {
     ethrpc: 'https://rpc.ankr.com/eth',
     scrollrpc: 'https://rpc.scroll.io',
-    sleepFrom: 60,
-    sleepTo: 150,
-    maxGas: 25,
+    sleepFrom: 150,
+    sleepTo: 250,
+    maxGas: 16,
     shuffleWallets: true,
     shuffleCustomModules: false,
     customModules: [] // scrollswap
@@ -11,7 +11,7 @@ export const generalConfig = {
 
 export const bridgeConfig = {
     type: 'official', // 'official', 'orbiter'
-    orbiterFromNetwork: 'arbitrum', // 'arbitrum', 'optimism', 'polygon'
+    orbiterFromNetwork: 'arbitrum',
     bridgeFrom: 0.001,
     bridgeTo: 0.002,
     orbiterFrom: 0.005, // min 0.005
