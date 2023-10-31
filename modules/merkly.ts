@@ -223,7 +223,7 @@ export class Merkly {
         if (merklyConfig.sourceNetwork === 'auto') {
             const topBalance:number = await this.defineSourceNetwork()
 
-            if ((parseInt(value) * this.ethPrice) < topBalance) {
+            if ((parseFloat(value) * this.ethPrice) > topBalance) {
                 this.logger.error(`${this.walletAddress} | Not enough balance, skip`)
                 return false
             }
