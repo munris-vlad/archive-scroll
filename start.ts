@@ -79,11 +79,12 @@ async function merklyModule() {
     for (let privateKey of privateKeys) {
         const refuelSum = randomFloat(merklyConfig.refuelFrom, merklyConfig.refuelTo)
         const merkly = new Merkly(privateKeyConvert(privateKey))
-        await merkly.refuel(refuelSum.toString())
         
-        const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
-        logger.info(`Waiting ${sleepTime} sec until next wallet...`)
-        await sleep(sleepTime * 1000)
+        if (await merkly.refuel(refuelSum.toString())) {
+            const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
+            logger.info(`Waiting ${sleepTime} sec until next wallet...`)
+            await sleep(sleepTime * 1000)
+        }
     }
 }
 

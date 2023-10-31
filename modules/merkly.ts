@@ -211,18 +211,27 @@ export class Merkly {
     }
 
     async refuel(value: string) {
-        await waitGas()
-        this.logger.info(`${this.walletAddress} | Refuel ${this.sourceNetwork} -> ${this.randomNetwork.name}`)
-        
+        if (merklyConfig.checkScrollBalance) {
+            const scrollBalance = getUsdValue(await getPublicScrollClient().getBalance({ address: this.walletAddress }), this.ethPrice)
+
+            if (scrollBalance >= merklyConfig.minBalance) {
+                this.logger.info(`${this.walletAddress} | Balance in Scroll is enough, skip`)
+                return false
+            }
+        }
+
         if (merklyConfig.sourceNetwork === 'auto') {
             const topBalance:number = await this.defineSourceNetwork()
 
             if ((parseInt(value) * this.ethPrice) < topBalance) {
-                this.logger.info(`${this.walletAddress} | Not enough balance, skip`)
-                return
+                this.logger.error(`${this.walletAddress} | Not enough balance, skip`)
+                return false
             }
         }
 
+        await waitGas()
+
+        this.logger.info(`${this.walletAddress} | Refuel ${this.sourceNetwork} -> ${this.randomNetwork.name}`)
         let amount = BigInt(parseEther(value))
 
         let isSuccess = false
@@ -272,5 +281,7 @@ export class Merkly {
                 }
             }
         }
+
+        return true
     }
 }
