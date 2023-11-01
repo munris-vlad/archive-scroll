@@ -1,7 +1,7 @@
 import { Hex, encodePacked, parseEther, parseGwei } from "viem"
 import { makeLogger } from "../utils/logger"
 import { merklyAbi, merklyAbiBase } from "../data/abi/merkly"
-import { getUsdValue, random, randomFloat, sleep } from "../utils/common"
+import { getSymbolPrice, getUsdValue, random, randomFloat, sleep } from "../utils/common"
 import { merklyConfig } from "../config"
 import { refill } from "../utils/refill"
 import { waitGas } from "../utils/getCurrentGas"
@@ -140,19 +140,8 @@ export class Merkly {
     }
 
     async defineSourceNetwork() {
-        let polygonPrice = 0
-        let avaxPrice = 0
-        await axios.get('https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD').then(response => {
-            this.ethPrice = response.data.USD
-        })
-
-        await axios.get('https://min-api.cryptocompare.com/data/price?fsym=MATIC&tsyms=USD').then(response => {
-            polygonPrice = response.data.USD
-        })
-
-        await axios.get('https://min-api.cryptocompare.com/data/price?fsym=AVAX&tsyms=USD').then(response => {
-            avaxPrice = response.data.USD
-        })
+        let polygonPrice = await getSymbolPrice('MATIC')
+        let avaxPrice = await getSymbolPrice('AVAX')
 
         let balance:any = { Polygon: 0, Avalanche: 0, Arbitrum: 0, Optimism: 0}
 
@@ -211,12 +200,15 @@ export class Merkly {
     }
 
     async refuel(value: string) {
+        this.ethPrice = await getSymbolPrice('ETH')
         if (merklyConfig.checkScrollBalance) {
-            const scrollBalance = getUsdValue(await getPublicScrollClient().getBalance({ address: this.walletAddress }), this.ethPrice)
-
+            const balance = await getPublicScrollClient().getBalance({ address: this.walletAddress })
+            const scrollBalance = getUsdValue(balance, this.ethPrice)
             if (scrollBalance >= merklyConfig.minBalance) {
-                this.logger.info(`${this.walletAddress} | Balance in Scroll is enough, skip`)
+                this.logger.info(`${this.walletAddress} | Balance in Scroll is ${scrollBalance.toFixed(2)} and enough, skip`)
                 return false
+            } else {
+                this.logger.info(`${this.walletAddress} | Balance in Scroll is ${scrollBalance.toFixed(2)} and not enough, continue`)
             }
         }
 

@@ -1,3 +1,6 @@
+import axios from "axios";
+import { formatEther } from "viem"
+
 export function random(min: number, max: number): number {
     min = Math.ceil(min)
     max = Math.floor(max)
@@ -21,6 +24,12 @@ export function shuffle(array: Array<string>) {
     return array
 }
 
-export function getUsdValue(value: BigInt, usdPrice: number) {
-    return (parseInt(value.toString()) / Math.pow(10, 18)) * usdPrice
+export function getUsdValue(value: bigint, usdPrice: number) {
+    return parseFloat(formatEther(value)) * usdPrice
+}
+
+export async function getSymbolPrice(symbol: string = 'ETH') {
+    return await axios.get(`https://min-api.cryptocompare.com/data/price?fsym=${symbol}&tsyms=USD`).then(response => {
+        return response.data.USD
+    })
 }
