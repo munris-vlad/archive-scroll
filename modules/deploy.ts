@@ -4,6 +4,7 @@ import { getPublicScrollClient, getScrollWalletClient } from "../utils/scrollCli
 import { deployAbi, deployData, deployMerklyData } from "../data/abi/deploy"
 import { waitGas } from "../utils/getCurrentGas"
 import { deployConfig } from "../config"
+import { random } from "../utils/common"
 
 export class Deploy {
     privateKey: Hex
@@ -23,10 +24,31 @@ export class Deploy {
     async deploy() {
         await waitGas()
         this.logger.info(`${this.walletAddress} | Deploy contract`)
+        let bytecode: any
+
+        switch (deployConfig.type) {
+            case 'merkly':
+                bytecode = deployMerklyData
+                break
+            case 'own':
+                bytecode = deployData
+                break
+            case 'random':
+                const randomDeploy = random(1, 2)
+                switch (randomDeploy) {
+                    case 1:
+                        bytecode = deployData
+                        break
+                    case 2:
+                        bytecode = deployMerklyData
+                        break
+                }
+                break
+        }
 
         const txHash = await this.scrollWallet.deployContract({
             abi: deployAbi,
-            bytecode: deployConfig.type === 'own' ? deployData : deployMerklyData
+            bytecode: bytecode
         })
 
         this.logger.info(`${this.walletAddress} | Success contract deployed: https://scrollscan.com/tx/${txHash}`)

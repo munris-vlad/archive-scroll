@@ -27,12 +27,12 @@ export const swapConfig = {
 export const merklyConfig = {
     refuelFrom: 0.0006,
     refuelTo: 0.0007,
-    sourceNetwork: 'Base', // Scroll | to scroll: 'auto' 'random' 'Arbitrum' 'Optimism' 'Polygon' 'Avalanche' 'Base'
+    sourceNetwork: 'auto', // Scroll | to scroll: 'auto' 'random' 'Arbitrum' 'Optimism' 'Polygon' 'Avalanche' 'Base'
     destinationNetwork: 'Scroll', // Scroll | from scroll: 'random' 'Zora' 'Arbitrum Nova' 'Moonbeam' 'Gnosis' 'OpBNB' 'Astar'
     checkScrollBalance: true, // проверять наличие баланса в Scroll
     minBalance: 1 // если баланс >= этой суммы в USD, refuel будет пропускаться
 }
 
 export const deployConfig = {
-    type: 'own' // merkly
+    type: 'random' // 'own', 'merkly', 'random'
 }
