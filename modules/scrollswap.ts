@@ -12,7 +12,7 @@ import { waitGas } from "../utils/getCurrentGas"
 export class Scrollswap {
     privateKey: Hex
     logger: any
-    baseswapContract: Hex = '0x327Df1E6de05895d2ab08513aaDD9313Fe505d86'
+    scrollswapContract: Hex = '0xEfEb222F8046aAa032C56290416C3192111C0085'
     randomNetwork: any
     scrollClient: any
     scrollWallet: any
@@ -28,7 +28,7 @@ export class Scrollswap {
 
     async getMinAmountOut(fromToken: Hex, toToken: Hex, amount: BigInt, slippage: number) {
         const minAmountOut = await this.scrollClient.readContract({
-            address: this.baseswapContract,
+            address: this.scrollswapContract,
             abi: scrollswapRouterAbi,
             functionName: 'getAmountsOut',
             args: [
@@ -55,7 +55,7 @@ export class Scrollswap {
                 const deadline: number = Math.floor(Date.now() / 1000) + 1000000
 
                 const txHash = await this.scrollWallet.writeContract({
-                    address: this.baseswapContract,
+                    address: this.scrollswapContract,
                     abi: scrollswapRouterAbi,
                     functionName: 'swapExactETHForTokens',
                     args: [
@@ -67,8 +67,7 @@ export class Scrollswap {
                         this.walletAddress,
                         deadline
                     ],
-                    value: amount,
-                    gasPrice: parseGwei((randomFloat(0.005, 0.006)).toString())
+                    value: amount
                 })
                 successSwap = true
                 this.logger.info(`${this.walletAddress} | Success swap ${formatEther(amount)} ETH -> ${toToken}: https://scrollscan.com/tx/${txHash}`)
@@ -99,14 +98,14 @@ export class Scrollswap {
                 const minAmountOut = await this.getMinAmountOut(tokens[fromToken], tokens['ETH'], amount, 1)
                 const deadline: number = Math.floor(Date.now() / 1000) + 1000000
 
-                await approve(this.scrollWallet, this.scrollClient, tokens[fromToken], this.baseswapContract, amount, this.logger)
+                await approve(this.scrollWallet, this.scrollClient, tokens[fromToken], this.scrollswapContract, amount, this.logger)
 
                 const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
                 this.logger.info(`${this.walletAddress} | Waiting ${sleepTime} sec after approve before swap...`)
                 await sleep(sleepTime * 1000)
 
                 const txHash = await this.scrollWallet.writeContract({
-                    address: this.baseswapContract,
+                    address: this.scrollswapContract,
                     abi: scrollswapRouterAbi,
                     functionName: 'swapExactTokensForETH',
                     args: [
@@ -118,8 +117,7 @@ export class Scrollswap {
                         ],
                         this.walletAddress,
                         deadline
-                    ],
-                    gasPrice: parseGwei((randomFloat(0.005, 0.006)).toString())
+                    ]
                 })
 
                 successSwap = true
