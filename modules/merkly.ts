@@ -205,10 +205,10 @@ export class Merkly {
             const balance = await getPublicScrollClient().getBalance({ address: this.walletAddress })
             const scrollBalance = getUsdValue(balance, this.ethPrice)
             if (scrollBalance >= merklyConfig.minBalance) {
-                this.logger.info(`${this.walletAddress} | Balance in Scroll is ${scrollBalance.toFixed(2)} and enough, skip`)
+                this.logger.info(`${this.walletAddress} | Balance in Scroll is $${scrollBalance.toFixed(2)} and enough, skip`)
                 return false
             } else {
-                this.logger.info(`${this.walletAddress} | Balance in Scroll is ${scrollBalance.toFixed(2)} and not enough, continue`)
+                this.logger.info(`${this.walletAddress} | Balance in Scroll is $${scrollBalance.toFixed(2)} and not enough, continue`)
             }
         }
 
