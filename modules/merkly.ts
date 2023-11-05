@@ -196,7 +196,7 @@ export class Merkly {
         })
 
         value = txValue[0]
-        return this.sourceNetwork === 'Base' ? BigInt(Math.round(Number(value) * 1.2)) : BigInt(value)
+        return this.sourceNetwork === 'Base' ? BigInt(Math.round(Number(value) * 1.05)) : BigInt(value)
     }
 
     async refuel(value: string) {
@@ -247,17 +247,34 @@ export class Merkly {
                 )
 
                 let value = await this.estimateLayerzeroFee(adapterParams)
-                const txHash = await this.wallet.writeContract({
-                    address: this.merklyContract,
-                    abi: this.sourceNetwork === 'Base' ? merklyAbiBase : merklyAbi,
-                    functionName: 'bridgeGas',
-                    args: [
-                        this.destNetwork,
-                        this.walletAddress,
-                        adapterParams
-                    ],
-                    value: value
-                })
+                let txHash
+                if (this.sourceNetwork === 'Base') {
+                    txHash = await this.wallet.writeContract({
+                        address: this.merklyContract,
+                        abi: merklyAbiBase,
+                        functionName: 'bridgeGas',
+                        args: [
+                            this.destNetwork,
+                            this.walletAddress,
+                            adapterParams
+                        ],
+                        value: value,
+                        maxPriorityFeePerGas: parseGwei('0.000084412'),
+                        maxFeePerGas: parseGwei('0.000097240')
+                    })
+                } else {
+                    txHash = await this.wallet.writeContract({
+                        address: this.merklyContract,
+                        abi: merklyAbi,
+                        functionName: 'bridgeGas',
+                        args: [
+                            this.destNetwork,
+                            this.walletAddress,
+                            adapterParams
+                        ],
+                        value: value
+                    })
+                }
                 isSuccess = true
                 this.logger.info(`${this.walletAddress} | Success refuel to ${this.randomNetwork.name}: ${this.explorerLink}/tx/${txHash}`)
             } catch (e) {
