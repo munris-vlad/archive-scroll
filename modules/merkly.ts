@@ -196,7 +196,7 @@ export class Merkly {
         })
 
         value = txValue[0]
-        return this.sourceNetwork === 'Base' ? BigInt(Math.round(Number(value) * 1.05)) : BigInt(value)
+        return this.sourceNetwork === 'Base' ? BigInt(Math.round(Number(value) * 1.01)) : BigInt(value)
     }
 
     async refuel(value: string) {
