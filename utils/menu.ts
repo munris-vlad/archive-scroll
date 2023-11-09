@@ -8,33 +8,13 @@ export const entryPoint = async () => {
             message: "Действие:",
             choices: [
                 {
-                    name: "Custom module",
-                    value: "custom",
-                },
-                {
-                    name: "Random module",
-                    value: "random",
-                },
-                {
-                    name: "Random swap module",
-                    value: "random_swap",
-                },
-                {
-                    name: "Bridge",
-                    value: "bridge",
-                },
-                {
                     name: "Merkly",
                     value: "merkly",
                 },
                 {
                     name: "Deploy",
                     value: "deploy",
-                },
-                {
-                    name: "Swap all stables to ETH",
-                    value: "stable_to_eth",
-                },
+                }
             ],
             loop: false,
         },
