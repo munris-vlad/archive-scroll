@@ -5,10 +5,10 @@ import { makeLogger } from "./utils/logger"
 import { entryPoint } from "./utils/menu"
 import { Bridge } from "./modules/bridge"
 import { waitGas } from "./utils/getCurrentGas"
-import { Orbiter } from "./modules/orbiter"
 import { Scrollswap } from "./modules/scrollswap"
 import { Deploy } from "./modules/deploy"
 import { Merkly } from "./modules/merkly"
+import { Syncswap } from "./modules/syncswap"
 
 let privateKeys = readWallets('./private_keys.txt')
 
@@ -32,29 +32,23 @@ async function bridgeModule() {
     }
 }
 
-async function orbiterModule() {
-    const logger = makeLogger("Orbiter")
-    for (let privateKey of privateKeys) {
-        const orbiter = new Orbiter(privateKeyConvert(privateKey))
-        const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
-
-        const bridgeSum = randomFloat(bridgeConfig.orbiterFrom, bridgeConfig.orbiterTo)
-        switch (bridgeConfig.orbiterFromNetwork) {
-            case 'arbitrum':
-                await orbiter.arbitrumOrbiter(bridgeSum.toString())
-                break
-        }
-        
-        logger.info(`Waiting ${sleepTime} sec until next wallet...`)
-        await sleep(sleepTime * 1000)
-    }
-}
-
 async function scrollswapModule() {
     const logger = makeLogger("Scrollswap")
     for (let privateKey of privateKeys) {
         const scrollswap = new Scrollswap(privateKeyConvert(privateKey))
         await scrollswap.roundSwap()
+        
+        const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
+        logger.info(`Waiting ${sleepTime} sec until next wallet...`)
+        await sleep(sleepTime * 1000)
+    }
+}
+
+async function syncswapModule() {
+    const logger = makeLogger("Scrollswap")
+    for (let privateKey of privateKeys) {
+        const syncswap = new Syncswap(privateKeyConvert(privateKey))
+        await syncswap.roundSwap()
         
         const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
         logger.info(`Waiting ${sleepTime} sec until next wallet...`)
@@ -180,14 +174,14 @@ async function startMenu() {
         case "bridge":
             await bridgeModule()
             break
-        case "orbiter":
-            await orbiterModule()
-            break
         case "merkly":
             await merklyModule()
             break
         case "scrollswap":
             await scrollswapModule()
+            break
+        case "syncswap":
+            await syncswapModule()
             break
         case "deploy":
             await deployModule()

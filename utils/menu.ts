@@ -24,16 +24,8 @@ export const entryPoint = async () => {
                     value: "bridge",
                 },
                 {
-                    name: "Orbiter",
-                    value: "orbiter",
-                },
-                {
                     name: "Merkly",
                     value: "merkly",
-                },
-                {
-                    name: "Scrollswap",
-                    value: "scrollswap",
                 },
                 {
                     name: "Deploy",
