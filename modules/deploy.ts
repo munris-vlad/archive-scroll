@@ -33,21 +33,25 @@ export class Deploy {
 
         const { proof, metadata } = data
 
-        try {
-            const txHash = await this.scrollWallet.writeContract({
-                address: '0x74670a3998d9d6622e32d0847ff5977c37e0ec91',
-                abi: deployNftAbi,
-                functionName: 'mint',
-                args: [
-                    this.walletAddress,
-                    metadata,
-                    proof
-                ]
-            })
-            
-            this.logger.info(`${this.walletAddress} | Success minted: https://scrollscan.com/tx/${txHash}`)
-        } catch (e) {
-            this.logger.error(`${this.walletAddress} | Error ${e.toString()}`)
+        if (proof) {
+            try {
+                const txHash = await this.scrollWallet.writeContract({
+                    address: '0x74670a3998d9d6622e32d0847ff5977c37e0ec91',
+                    abi: deployNftAbi,
+                    functionName: 'mint',
+                    args: [
+                        this.walletAddress,
+                        metadata,
+                        proof
+                    ]
+                })
+                
+                this.logger.info(`${this.walletAddress} | Success minted: https://scrollscan.com/tx/${txHash}`)
+            } catch (e) {
+                this.logger.error(`${this.walletAddress} | Error ${e.toString()}`)
+            }
+        } else {
+            this.logger.info(`${this.walletAddress} | No NFT for this wallet`)
         }
     }
 }
