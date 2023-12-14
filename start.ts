@@ -15,10 +15,10 @@ if (generalConfig.shuffleWallets) {
 }
 
 async function deployModule() {
-    const logger = makeLogger("Deploy")
+    const logger = makeLogger("Deploy NFT mint")
     for (let privateKey of privateKeys) {
         const deploy = new Deploy(privateKeyConvert(privateKey))
-        await deploy.deploy()
+        await deploy.mint()
         
         const sleepTime = random(generalConfig.sleepFrom, generalConfig.sleepTo)
         logger.info(`Waiting ${sleepTime} sec until next wallet...`)

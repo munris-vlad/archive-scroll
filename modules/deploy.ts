@@ -5,6 +5,8 @@ import { deployAbi, deployData, deployMerklyData } from "../data/abi/deploy"
 import { waitGas } from "../utils/getCurrentGas"
 import { deployConfig } from "../config"
 import { random } from "../utils/common"
+import axios from "axios"
+import { deployNftAbi } from "../data/abi/deploy-nft"
 
 export class Deploy {
     privateKey: Hex
@@ -21,36 +23,31 @@ export class Deploy {
         this.walletAddress = this.scrollWallet.account.address
     }
 
-    async deploy() {
+    async mint() {
         await waitGas()
-        this.logger.info(`${this.walletAddress} | Deploy contract`)
-        let bytecode: any
+        this.logger.info(`${this.walletAddress} | Mint NFT for contract deploy`)
 
-        switch (deployConfig.type) {
-            case 'merkly':
-                bytecode = deployMerklyData
-                break
-            case 'own':
-                bytecode = deployData
-                break
-            case 'random':
-                const randomDeploy = random(1, 2)
-                switch (randomDeploy) {
-                    case 1:
-                        bytecode = deployData
-                        break
-                    case 2:
-                        bytecode = deployMerklyData
-                        break
-                }
-                break
-        }
-
-        const txHash = await this.scrollWallet.deployContract({
-            abi: deployAbi,
-            bytecode: bytecode
+        const data = await axios.get(`https://nft.scroll.io/p/${this.walletAddress}.json`).then(response => {
+            return response.data
         })
 
-        this.logger.info(`${this.walletAddress} | Success contract deployed: https://scrollscan.com/tx/${txHash}`)
+        const { proof, metadata } = data
+
+        try {
+            const txHash = await this.scrollWallet.writeContract({
+                address: '0x74670a3998d9d6622e32d0847ff5977c37e0ec91',
+                abi: deployNftAbi,
+                functionName: 'mint',
+                args: [
+                    this.walletAddress,
+                    metadata,
+                    proof
+                ]
+            })
+            
+            this.logger.info(`${this.walletAddress} | Success minted: https://scrollscan.com/tx/${txHash}`)
+        } catch (e) {
+            this.logger.error(`${this.walletAddress} | Error ${e.toString()}`)
+        }
     }
 }

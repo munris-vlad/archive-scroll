@@ -12,7 +12,7 @@ export const entryPoint = async () => {
                     value: "merkly",
                 },
                 {
-                    name: "Deploy",
+                    name: "Deploy NFT mint",
                     value: "deploy",
                 }
             ],
